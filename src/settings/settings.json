@@ -2,12 +2,15 @@
     "pitcher_events": {
         "strike_prob": 0.58
     },
-    "hitter_events": {
-        "swing_strike_prob": 0.3,
-        "swing_miss_strike_prob": 0.1,
-        "swing_foul_strike_prob": 0.2,
-        "swing_ball_prob": 0.15,
+    "batter_events": {
+        "swing_strike_prob": 0.5,
+        "swing_miss_strike_prob": 0.15,
+        "swing_foul_strike_prob": 0.40,
+        "swing_ball_prob": 0.25,
         "swing_miss_ball_prob": 0.8,
         "swing_foul_ball_prob": 0.1
+    },
+    "in_play_events": {
+        "hit_in_play_prob": 0.3
     }
 }

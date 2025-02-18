@@ -1,5 +1,4 @@
-import Sliders
+from .Sliders import Sliders
+sliders = Sliders()
 
-sliders = Sliders.Sliders()
-
-print(sliders.swing_strike_prob)
+print(sliders.batter_events.swing_strike_prob)

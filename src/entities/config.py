@@ -1,0 +1,3 @@
+
+DEFAULT_ATTRIBUTE = 0.5
+

@@ -1,6 +1,7 @@
 {
     "pitcher_events": {
-        "strike_prob": 0.58
+        "strike_prob": 0.58,
+        "hbp_prob": 0.02
     },
     "batter_events": {
         "swing_strike_prob": 0.5,
@@ -11,6 +12,54 @@
         "swing_foul_ball_prob": 0.1
     },
     "in_play_events": {
-        "hit_in_play_prob": 0.3
+        "groundball" :  0.4,
+        "flyball" : 0.4,
+        "linedrive": 0.2,
+        "hit_on_groundball": 0.2,
+        "hit_on_flyball": 0.2,
+        "hit_on_linedrive" : 0.4,
+        "single_hit_on_groundball": 0.9,
+        "double_hit_on_groundball": 0.09,
+        "triple_hit_on_groundball": 0.01,
+        "single_hit_on_flyball": 0.4,
+        "double_hit_on_flyball": 0.3,
+        "triple_hit_on_flyball": 0.1,
+        "homerun_hit_on_flyball": 0.2,
+        "single_hit_on_linedrive": 0.2,
+        "double_hit_on_linedrive": 0.4,
+        "triple_hit_on_linedrive": 0.2,
+        "homerun_hit_on_linedrive": 0.2
+    },
+    "fielder_events": {
+        "error_groundball": 0.02,
+        "error_flyball": 0.02,
+        "error_linedrive": 0.05,
+        "groundball_1": 0.05,
+        "groundball_2": 0.05,
+        "groundball_3": 0.1,
+        "groundball_4": 0.2,
+        "groundball_5": 0.15,
+        "groundball_6": 0.25,
+        "groundball_7": 0.06,
+        "groundball_8": 0.08,
+        "groundball_9": 0.06,
+        "flyball_1": 0.1,
+        "flyball_2": 0.05,
+        "flyball_3": 0.1,
+        "flyball_4": 0.1,
+        "flyball_5": 0.1,
+        "flyball_6": 0.1,
+        "flyball_7": 0.15,
+        "flyball_8": 0.15,
+        "flyball_9": 0.15,
+        "linedrive_1": 0.05,
+        "linedrive_2": 0,
+        "linedrive_3": 0.05,
+        "linedrive_4": 0.1,
+        "linedrive_5": 0.1,
+        "linedrive_6": 0.1,
+        "linedrive_7": 0.2,
+        "linedrive_8": 0.2,
+        "linedrive_9": 0.2
     }
 }

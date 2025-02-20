@@ -10,18 +10,22 @@ class GameState:
     balls = 0
     strikes = 0 
     scores = (0, 0)
+    
+    current_state = None
 
-    def __init__(self, team_A: Team, team_B: Team, starting_p_A: int, starting_p_B: int, max_innings=9): # Team A = home team, Team B = Away Team
-        team_A = team_A
-        team_B = team_B
-        starting_p_A = team_A.starting_pitchers[starting_p_A]
-        starting_p_B = team_B.starting_pitchers[starting_p_B]
-        max_innings = max_innings
+    def __init__(self, team_A: Team, team_B: Team, starting_pitcher_A: int, starting_pitcher_B: int, max_innings=9): # Team A = home team, Team B = Away Team
+        self.team_A = team_A.city + team_A.name # Provides a unique id to reference
+        self.team_B = team_B.city + team_B.name
+        self.pitcher_A = starting_pitcher_A
+        self.pitcher_B = starting_pitcher_B
+        self.max_innings = max_innings
+        self.field = team_A
+        self.batting = team_B
     
 
     def start_game(self):
         print(f"The {self.team_B.city} {self.team_B.name} at The {self.team_A.city} {self.team_B.name}")
         print(f"{self.scores[0]}-{self.score[1]}")
-        print(f"P {self.starting_p_A.first_name} {self.starting_p_B.last_name} takes the mound for the {self.team_A.name}")  
+        print(f"P {self.pitcher_A.first_name} {self.pitcher_B.last_name} takes the mound for the {self.team_A.name}")  
     
 

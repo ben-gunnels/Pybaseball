@@ -5,6 +5,7 @@ class Player:
         self.first_name = kwargs.get("first_name", "First")
         self.position = kwargs.get("position", 0)
         self.number = kwargs.get("number", 99)
+        self.handedness = kwargs.get("handedness", "RH")
     
 
     def _translatePosition(self):

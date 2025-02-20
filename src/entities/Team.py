@@ -32,8 +32,6 @@ class Team:
                 tmp_lineup.append(player)
         self.lineup = tmp_lineup
         
-
-
     def _set_rotation(self):
         self.starting_pitchers = sorted(self.starting_pitchers + self.bullpen, reverse=True, key=lambda x: x._get_overall() + x.stamina) # Best pitcher in Ace spot
         self.bullpen = self.starting_pitchers[5:] # Send every pitcher after 5 to the bullpen

@@ -1,19 +1,18 @@
 
+import random
 
-"""
-    Pitcher:
-        1 - Strike
-        2 - Ball
-        3 - HBP
+class Event:
+    def __init__(self, event, probabilities, disp=""):
+        self.event = event
+        self.disp = disp
+        self.probabilities = probabilities
     
-    Hitter:
-        1 - Swing
-        2 - No Swing
-        3 - Bunt
+    def display(self):
+        print(self.disp)
 
-    Swing Results:
-        1 - 
-
-    
-
-"""
+    def generate_outcome(self): # Partitions outcomes by probability
+        r = random.random()
+        for i in range(len(self.probabilities)):
+            if (r < self.probabilities[i]):
+                return i
+        return len(self.probabilities)

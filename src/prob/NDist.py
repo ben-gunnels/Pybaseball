@@ -15,11 +15,16 @@ class NDist:
         pdf_value = stats.norm.pdf(z_score, loc=self.mu, scale=self.sigma)
         return pdf_value
     
-    def calculate_x(self, percentile):
+    def calculate_x(self, percentile, mn=MIN_PCT, mx=MAX_PCT):
         """
             Returns the x value given the percentile and the settings mean and standard deviation.
         """
-        return NDist(stats.norm.ppf(percentile, loc=self.mu, scale=self.sigma), self.sigma)
+        val = stats.norm.ppf(percentile, loc=self.mu, scale=self.sigma)
+        val = max(val, mn)
+        val = min(val, mx)
+        return NDist(val, self.sigma)
+        
+
     
     def calculate_random_percentile(self, mn=MIN_PCT, mx=MAX_PCT, rnd=2, mode="normal"):
         """

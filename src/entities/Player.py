@@ -1,6 +1,7 @@
 class Player:
     # Name, Position, Number
     def __init__(self, **kwargs):
+        self._id = kwargs.get("id", -1)
         self.last_name = kwargs.get("last_name", "Last")
         self.first_name = kwargs.get("first_name", "First")
         self.position = kwargs.get("position", 0)

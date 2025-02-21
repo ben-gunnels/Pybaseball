@@ -6,8 +6,8 @@ from .FielderEvents import FielderEvents
 
 class Sliders:
     def __init__(self):
-        self.batter_events = BatterEvents()
         self.pitcher_events = PitcherEvents()
+        self.batter_events = BatterEvents()
         self.in_play_events = InPlayEvents()
         self.fielder_events = FielderEvents()
         

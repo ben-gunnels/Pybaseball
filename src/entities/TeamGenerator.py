@@ -33,13 +33,14 @@ class TeamGenerator:
         self.team_data["bench"] = [generate_batter(random.choice([x for x in range(10) if x != 1])) for i in range(5)]
 
         numbers_taken = set()
+        ids_taken = set()
 
         # Populate with random values
         for category in ["lineup", "starting_pitchers", "bullpen", "bench"]:
             if category in {"lineup", "bench"}:
-                self.team_data[category] = [Batter(**generate_batter_attributes(randomize_player(player, numbers_taken))) for player in self.team_data[category]]
+                self.team_data[category] = [Batter(**generate_batter_attributes(randomize_player(player, ids_taken, numbers_taken))) for player in self.team_data[category]]
             elif category in {"starting_pitchers", "bullpen"}:
-                self.team_data[category] = [Pitcher(**generate_pitcher_attributes(randomize_player(player, numbers_taken))) for player in self.team_data[category]]
+                self.team_data[category] = [Pitcher(**generate_pitcher_attributes(randomize_player(player, ids_taken, numbers_taken))) for player in self.team_data[category]]
 
         # Output the updated JSON
         # print(json.dumps(team_data, indent=4))

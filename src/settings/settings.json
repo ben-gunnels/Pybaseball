@@ -22,14 +22,14 @@
         "double_hit_on_groundball_prob": 0.09,
         "triple_hit_on_groundball_prob": 0.01,
         "homerun_hit_on_groundball_prob": 0,
-        "single_hit_on_flyball_prob": 0.4,
+        "single_hit_on_flyball_prob": 0.5,
         "double_hit_on_flyball_prob": 0.3,
         "triple_hit_on_flyball_prob": 0.1,
-        "homerun_hit_on_flyball_prob": 0.2,
-        "single_hit_on_linedrive_prob": 0.2,
+        "homerun_hit_on_flyball_prob": 0.1,
+        "single_hit_on_linedrive_prob": 0.3,
         "double_hit_on_linedrive_prob": 0.4,
         "triple_hit_on_linedrive_prob": 0.2,
-        "homerun_hit_on_linedrive_prob": 0.2
+        "homerun_hit_on_linedrive_prob": 0.1
     },
     "fielder_events": {
         "error_groundball_prob": 0.02,
@@ -62,5 +62,19 @@
         "flyball_7_prob": 0.15,
         "flyball_8_prob": 0.15,
         "flyball_9_prob": 0.15
+    },
+    "runner_events": {
+        "single_hit_on_groundball_prob": 0.8,
+        "double_hit_on_groundball_prob": 0.8,
+        "triple_hit_on_groundball_prob": 1,
+        "homerun_hit_on_groundball_prob": 1,
+        "single_hit_on_linedrive_prob": 0.8,
+        "double_hit_on_linedrive_prob": 0.8,
+        "triple_hit_on_linedrive_prob": 1,
+        "homerun_hit_on_linedrive_prob": 1,
+        "single_hit_on_flyball_prob": 0.8,
+        "double_hit_on_flyball_prob": 0.8,
+        "triple_hit_on_flyball_prob": 1,
+        "homerun_hit_on_flyball_prob": 1
     }
 }

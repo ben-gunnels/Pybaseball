@@ -6,7 +6,6 @@ from .BaseRunning import BaseRunning
 
 class GameState:
     # Track the current state of the game
-    max_innings = 9 
     inning = [1, True] # Inning_no, Top of Inning
     out = 0
     balls = 0
@@ -14,13 +13,12 @@ class GameState:
     score = [0, 0]
     bullpen = [False, False] # The team has gone to the bullpen
     spot_in_order = [0, 0] # Index of batter in lineup currently up
-    max_innings = max_innings
     event_register = EventRegister()
     baserunning = BaseRunning()
     
     _current_state = None
 
-    def __init__(self, team_A: Team, team_B: Team, starting_pitcher_A: int, starting_pitcher_B: int, max_innings=9): # Team A = home team, Team B = Away Team
+    def __init__(self, team_A: Team, team_B: Team, starting_pitcher_A: int, starting_pitcher_B: int): # Team A = home team, Team B = Away Team
         self.team_A = team_A.city + " " + team_A.name
         self.team_B = team_B.city + " " + team_B.name
         self.pitcher_A = starting_pitcher_A
@@ -30,7 +28,6 @@ class GameState:
         self.batting_team = [team_B, self.team_B]
         self.batter = self.batting_team[0].lineup[self.spot_in_order[1]] # Away team start to bat first
 
-    
     def start_game(self):
         print(f"The {self.team_A} at The {self.team_B}")
         print(f"{self.scores[0]}-{self.score[1]}")
@@ -47,13 +44,16 @@ class GameState:
         if (new_val in self.event_register.out_event):
             self.out += 1
         
+        if (new_val in self.event_register.runners_advance_event):
+            tm = 0 if self.batting_team[1] == self.team_A else 1
+            self.score[tm] += self.baserunning.advance_runners(new_val, self.batter)
+
         # Always change to the next batter, increment the spot in lineup
         if (new_val == "at-bat-completed"):
             self._next_batter()
-
-        # Handle logic for switching the teams
-        if (self.out >= NUMBER_OUTS):
-            self._switch_sides()
+             # Handle logic for switching the teams
+            if (self.out >= NUMBER_OUTS):
+                self._switch_sides()
     
     def _next_batter(self):
         # Get the index of the team at bat
@@ -88,6 +88,7 @@ class GameState:
 
         if (not self.inning[1]): # Bottom of the inning
             self.inning[0] += 1
+            
         self.inning[1] = not self.inning[1] # Flip top to bottom, bottom to top
 
         self.current_state = "switch-sides"

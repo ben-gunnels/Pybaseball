@@ -18,5 +18,7 @@ class Event:
         return len(self.probabilities)
     
     def _add_to_tables(self, data):
+        if len(data)==0:
+            return 
         for table in data:
             table[self.event] = table.get(self.event, 0) + 1

@@ -3,6 +3,7 @@ from .BatterEvents import BatterEvents
 from .PitcherEvents import PitcherEvents
 from .InPlayEvents import InPlayEvents
 from .FielderEvents import FielderEvents
+from .RunnerEvents import RunnerEvents
 
 class Sliders:
     def __init__(self):
@@ -10,6 +11,7 @@ class Sliders:
         self.batter_events = BatterEvents()
         self.in_play_events = InPlayEvents()
         self.fielder_events = FielderEvents()
+        self.runner_events = RunnerEvents()
         
         with open("src\settings\settings.json", "r") as file:
             _slider_data = json.load(file)
@@ -25,5 +27,7 @@ class Sliders:
                     setattr(self.in_play_events, p, v)
                 elif (k == "fielder_events"):
                     setattr(self.fielder_events, p, v)
+                elif (k == "runner_events"):
+                    setattr(self.runner_events, p, v)
             
         

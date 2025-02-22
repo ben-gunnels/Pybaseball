@@ -4,17 +4,19 @@ from ..entities.Batter import Batter
 from ..entities.Pitcher import Pitcher
 from ..entities.Pitch import Pitch
 from ..entities.TeamGenerator import TeamGenerator
-from ..utils.utils import get_inning_suffix
+from ..utils.utils import get_suffix
 from .GameState import GameState
-from .config import NUMBER_STRIKES, NUMBER_BALLS, MAX_HBP, MAX_SWING_MISS, PITCHER_NERF, NUMBER_INNINGS
+from .config import (NUMBER_STRIKES, NUMBER_BALLS, MAX_HBP, MAX_HR, MAX_GROUNDBALL_HR, 
+                     MAX_SWING_MISS, PITCHER_NERF, NUMBER_INNINGS)
 from .Event import Event
 from .EventRegister import EventRegister
 from .Distributions import Distributions
 
 class Simulator:
-    def __init__(self, team_a, team_b, game_state, event_register, data_table, **kwargs):
+    def __init__(self, team_a, team_b, game_state, event_register, data_table, number_innings=NUMBER_INNINGS, **kwargs):
         assert(NUMBER_STRIKES > 0)
         assert(NUMBER_BALLS > 0)
+        self.number_innings = number_innings
         self.team_a = team_a
         self.team_b = team_b
         self.game_state = game_state
@@ -23,13 +25,6 @@ class Simulator:
         self.between_pitch_delay = kwargs.get("between_pitch_delay", 0)
         self.pitch_speed_delay = kwargs.get("pitch_speed_delay", 0)
         self.dist = Distributions()
-
-    def decide_outcome(self, buckets):
-        r = random.random()
-        for i in range(len(buckets)):
-            if (r < buckets[i]):
-                return i
-        return len(buckets)
 
     def display_intro(self, team, ballpark=False, delay=0):
         team.display(ballpark)
@@ -54,7 +49,8 @@ class Simulator:
     
     def sim_game(self):
         while (True):
-            if (self.game_state.inning[0] > NUMBER_INNINGS):
+            if (self.game_state.inning[0] > self.number_innings):
+                Event("end-game", [], [self.data], f"\nEND OF GAME!\nFinal Score: {self.game_state.team_A} {self.game_state.score[0]} to {self.game_state.team_B} {self.game_state.score[1]}").display()
                 break
 
             self.game_state.current_state = "start-inning"
@@ -66,10 +62,12 @@ class Simulator:
             while (self.game_state.current_state != "switch-sides"):
                 self.at_bat(self.game_state.pitcher, self.game_state.batter)
                 
-    def at_bat(self, pitcher, batter):
+    def at_bat(self, pitcher: Pitcher, batter: Batter):
         """
             Handles the course of a single at bat between a pitcher and a hitter.
             It manages the scenarios that could occur in a probabilistic manner. 
+            Params: pitcher (Pitcher), batter (batter)
+            Returns: None
         """
         self.game_state.balls = 0
         self.game_state.strikes = 0
@@ -80,7 +78,7 @@ class Simulator:
         break_condition = False
         at_bat_message = (
                 f"\n"
-                f"{'Top' if self.game_state.inning[1] else 'Bottom'} of the {self.game_state.inning[0]}{get_inning_suffix(self.game_state.inning[0])} inning.\n"
+                f"{'Top' if self.game_state.inning[1] else 'Bottom'} of the {self.game_state.inning[0]}{get_suffix(self.game_state.inning[0])} inning.\n"
                 f"The score is {self.game_state.team_A} {self.game_state.score[0]} to \n{self.game_state.team_B} {self.game_state.score[1]}.\n"
                 f"{pitcher.first_name} {pitcher.last_name} toes the rubber to face {batter.first_name} {batter.last_name} with {self.game_state.out} outs.\n"
         )
@@ -109,7 +107,8 @@ class Simulator:
                 self.game_state.current_state = self.event_register.swing_decision_event[swing_decision] + " " + "ball" # Swing, Not In-Zone
                 
             elif (self.game_state.current_state == "hbp"):
-                Event("hbp", [], [batter_data, pitcher_data], disp=f"Batter {batter.first_name} {batter.last_name} HIT BY PITCH! Ouch! That's gotta hurt!").display()
+                Event("batter-hbp", [], [batter_data, pitcher_data], disp=f"Batter {batter.first_name} {batter.last_name} HIT BY PITCH! Ouch! That's gotta hurt!").display()
+                self.game_state.current_state = "batter-hbp"
                 break_condition = True
             
             # Swing Decision -> Swing Outcome
@@ -136,6 +135,7 @@ class Simulator:
                 Event("ball", [], [batter_data, pitcher_data], "Taken\nBall.").display()
                 if (self._check_walk()):
                     Event("walk", [], [batter_data, pitcher_data], f"Ball {NUMBER_BALLS}. Take your base. WALK").display()
+                    self.game_state.current_state = "walk"
                     break_condition = True
             
             # Swing Outcome -> result
@@ -157,13 +157,21 @@ class Simulator:
                 self.in_play(batter, pitcher, pitch, batter_data, pitcher_data)
                 break_condition = True
 
-    def in_play(self, batter, pitcher, pitch, batter_data, pitcher_data):
-        contact = batter.contact_r if pitcher.handedness == "RH" else batter.contact_l
-        power = batter.power_r if pitcher.handedness == "LH" else batter.power_l
+    def in_play(self, batter: Batter, pitcher: Pitcher, pitch: Pitch, batter_data: dict, pitcher_data: dict):
+        """
+            Manages the outcomes generated for a ball that is put in play. The ball can either generate a hit or an out. 
+            The type of contact is generated (groundball, linedrive, flyball).
+            If the swing results in a hit then the total bases the hitter earned is computed based on the type of contact. 
+            Parameters: batter (Batter), pitcher (Pitcher), pitch (Pitch), pitch_in_zone (bool), batter_data (dict), pitcher_data (dict)
+            Returns: None
+        
+        """
+        contact_trait = batter.contact_r if pitcher.handedness == "RH" else batter.contact_l
+        power_trait = batter.power_r if pitcher.handedness == "LH" else batter.power_l
 
         # First get the type of contact that is made groundball, flyball, linedrive
-        groundball_prob = self.dist.groundball_prob_dist.calculate_x(((1-power) + pitch.control*0.1)/2) # Pitch control increases odds of groundball
-        linedrive_prob = self.dist.linedrive_prob_dist.calculate_x((power + (1-pitch.stuff*0.1))/2) # Let pitch stuff nerf the power
+        groundball_prob = self.dist.groundball_prob_dist.calculate_x(((1-power_trait) + pitch.control*0.1)/2) # Pitch control increases odds of groundball
+        linedrive_prob = self.dist.linedrive_prob_dist.calculate_x((power_trait + (1-pitch.stuff*0.1))/2) # Let pitch stuff nerf the power
         in_play = Event("in-play", [groundball_prob.mu, linedrive_prob.mu], [batter_data, pitcher_data], f"{batter.first_name} {batter.last_name} puts that ball IN PLAY!")
         in_play.display()
         in_play_outcome = in_play.generate_outcome()
@@ -172,7 +180,7 @@ class Simulator:
 
         # Get whether the play is a hit 
         hit_prob_dist = getattr(self.dist, f"hit_on_{self.game_state.current_state}_prob_dist")
-        hit_prob = hit_prob_dist.calculate_x((contact+power) / 2) # Likelihood of a hit is impacted by the average of contact and power
+        hit_prob = hit_prob_dist.calculate_x((contact_trait+power_trait) / 2) # Likelihood of a hit is impacted by the average of contact and power
         hit = Event("deciding-hit", [hit_prob.mu], [batter_data, pitcher_data])
         hit_outcome = hit.generate_outcome()
         self.game_state.current_state = f"{hit_type}-hit" if hit_outcome == 0 else f"out" # Ephemeral state
@@ -180,25 +188,35 @@ class Simulator:
         # If its a hit decide which fielder it is hit to
         if (self.game_state.current_state == f"{hit_type}-hit"):
             homerun_prob_dist = getattr(self.dist, f"homerun_hit_on_{hit_type}_prob_dist")
-            homerun_prob = homerun_prob_dist.calculate_x((power + (1-pitch.control*PITCHER_NERF))/2) # Pitcher control limits homeruns
+            if (hit_type == "groundball"):
+                homerun_prob = homerun_prob_dist.calculate_x((power_trait + (1-pitch.control*PITCHER_NERF))/2, mx=MAX_GROUNDBALL_HR)
+            else:
+                homerun_prob = homerun_prob_dist.calculate_x((power_trait + (1-pitch.control*PITCHER_NERF))/2, mx=MAX_HR)
+             # Pitcher control limits homeruns
             triple_prob_dist = getattr(self.dist, f"triple_hit_on_{hit_type}_prob_dist")
-            triple_prob = triple_prob_dist.calculate_x((power + batter.speed)/2)
+            triple_prob = triple_prob_dist.calculate_x((power_trait + 0.1*batter.speed)/2)
             double_prob_dist = getattr(self.dist, f"double_hit_on_{hit_type}_prob_dist")
-            double_prob = double_prob_dist.calculate_x((power + batter.speed)/2)
+            double_prob = double_prob_dist.calculate_x((power_trait + batter.speed)/2)
             single_prob = 1 - homerun_prob.mu - triple_prob.mu - double_prob.mu # Marginalize Singles, singles gets whats left
+            print(f"[{homerun_prob.mu}, {triple_prob.mu}, {double_prob.mu}, {single_prob}]")
             total_bases = Event("total-bases", [single_prob, single_prob + double_prob.mu, single_prob + double_prob.mu + triple_prob.mu], [batter_data, pitcher_data])
             total_bases_outcome = total_bases.generate_outcome()
 
             event_helper_table = { "groundball": 6, "linedrive": 10, "flyball": 14 } # Starting index for each hit type
-            self.game_state.current_state = self.event_register.in_play_event[event_helper_table[hit_type]+total_bases_outcome]
             Event(self.game_state.current_state, [], [batter_data, pitcher_data], f"{hit_type.capitalize()}...{['SINGLE.', 'DOUBLE!', 'TRIPLE!!', 'HOME RUN!!! See ya later!'][total_bases_outcome]}").display()
+            self.game_state.current_state = self.event_register.in_play_event[event_helper_table[hit_type]+total_bases_outcome]
         
         elif (self.game_state.current_state == f"out"):
             ### @TODO add fielder errors to this section
             Event(f"{self.game_state.current_state}", [], [batter_data, pitcher_data], f"{hit_type.capitalize()} out!").display()
             self.game_state.current_state = f"{hit_type}-out"
             
-    def _pitch(self, pitch, data):
+    def _pitch(self, pitch: Pitch, data: dict):
+        """
+            Generates the pitcher independent outcome: whether the pitch tossed is a ball or a strike. 
+            Parameters: pitch (Pitch), data (dict)
+            Returns: int (0 - strike, 1 - hbp, 2 - ball)
+        """
         strike_prob = self.dist.strike_prob_dist.calculate_x(pitch.control)
         hbp_prob = self.dist.hbp_prob_dist.calculate_x(1-pitch.control, mx=MAX_HBP) # Invert the probability, cap the probability at MAX_HBP
         pitch_event = Event("pitch", [strike_prob.mu, strike_prob.mu + hbp_prob.mu], data, f"And the {self.game_state.balls}-{self.game_state.strikes} pitch")
@@ -206,7 +224,13 @@ class Simulator:
         time.sleep(self.pitch_speed_delay)
         return pitch_event.generate_outcome()
     
-    def _batter_swing_decision(self, batter, pitcher, pitch, pitch_in_zone, data):
+    def _batter_swing_decision(self, batter: Batter, pitcher: Pitcher, pitch: Pitch, pitch_in_zone: bool, data: dict):
+        """
+            Generates the outcome of the batter deciding to either swing or take based on the pitch being in the zone or out of the zone.
+            Parameters: batter (Batter), pitcher (Pitcher), pitch (Pitch), pitch_in_zone (bool), data (dict)
+            Returns: int (Value of either 0 - swing, 1- no swing)
+        
+        """
         # Sprinkle some stuff and deception on the pitch
         # Nerf swing rate with high patience
         if pitch_in_zone:
@@ -223,7 +247,12 @@ class Simulator:
         swing_decision_event = Event("swing-decision", [swing_prob.mu], data)
         return swing_decision_event.generate_outcome()
 
-    def _batter_swing(self, batter, pitcher, pitch, pitch_in_zone, data):
+    def _batter_swing(self, batter: Batter, pitcher: Pitcher, pitch: Pitch, pitch_in_zone: bool, data: dict):
+        """
+            If a batter has swung this generates the outcome for whether the swing misses the pitch, fouls the pitch, or puts the pitch in play.
+            Parameters: batter (Batter), pitcher (Pitcher), pitch (Pitch), pitch_in_zone (bool), data (dict)
+            Returns: int (0 - miss, 1 - foul, 2 - in play)
+        """
         contact_trait = batter.contact_r if pitcher.handedness == "RH" else batter.contact_l
         if pitch_in_zone:
             swing_miss_prob = self.dist.swing_miss_strike_prob_dist.calculate_x(1-contact_trait) 
@@ -260,9 +289,9 @@ def main():
     team_b = TeamGenerator().generate_team()
     game_state = GameState(team_a, team_b, starting_pitcher_A=random.randrange(0, 5), starting_pitcher_B=random.randrange(0, 5))
     event_register = EventRegister()
-    delay_timers = { "between_pitch_delay": 2, "pitch_speed_delay": 1}
+    delay_timers = { "between_pitch_delay": 0, "pitch_speed_delay": 0}
     data = {}
-    simulator = Simulator(team_a, team_b, game_state, event_register, data, **delay_timers)
+    simulator = Simulator(team_a, team_b, game_state, event_register, data, number_innings=3, **delay_timers)
 
 
     simulator.display_intro(team_a, True, delay=0)
@@ -272,7 +301,7 @@ def main():
 
     simulator.sim_game()
 
-    print(data)
+    # print(data)
 
 if __name__ == "__main__":
     main()

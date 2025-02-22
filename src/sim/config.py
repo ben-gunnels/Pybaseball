@@ -6,6 +6,8 @@ NUMBER_STRIKES = 3
 NUMBER_BALLS = 4
 NUMBER_OUTS = 3
 MAX_HBP = 0.08
+MAX_GROUNDBALL_HR = 0.01
+MAX_HR = 0.3
 MAX_SWING_MISS = 0.6
 PITCHER_NERF = 0.1
 
@@ -69,4 +71,21 @@ FIELDER_EVENT_REGISTER = {
 
 
 OUT_EVENT_REGISTER = set({"strikeout", "groundball-out", "linedrive-out", "flyball-out"})
-RUNNERS_ADVANCE_REGISTER = set({"groundball"})
+
+# Event followed by the standard number of bases to move runners
+RUNNERS_ADVANCE_REGISTER = { 
+                            "walk": [1],
+                            "batter-hbp": [1],
+                            "single_hit_on_groundball": [1, 2], # First value is the likely value, the probability can be seen settings
+                            "double_hit_on_groundball": [2, 3],
+                            "triple_hit_on_groundball": [3],
+                            "homerun_hit_on_groundball": [4],
+                            "single_hit_on_linedrive": [1, 2],
+                            "double_hit_on_linedrive": [2, 3],
+                            "triple_hit_on_linedrive": [3],
+                            "homerun_hit_on_linedrive": [4],
+                            "single_hit_on_flyball": [1, 2],
+                            "double_hit_on_flyball": [2, 3],
+                            "triple_hit_on_flyball": [3],
+                            "homerun_hit_on_flyball": [4]
+                        }

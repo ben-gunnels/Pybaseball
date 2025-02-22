@@ -26,7 +26,7 @@ class Batter(Player):
         return round(total / len(args), 2)
 
     def display(self):
-        print(f"{self.handedness} {self._translatePosition()} {self.first_name} {self.last_name} {self.number}")
+        print(f"{self.handedness} {self.translate_position()} {self.first_name} {self.last_name} {self.number}")
         print(f"Attributes: {self.overall}ovr {self._get_mean(self.power_l, self.power_r)}pwr {self._get_mean(self.contact_l, self.contact_r)}cnt {self.zone_awareness}zna")
         print(f"{self.patience}ptn {self.speed}spd\n")
 

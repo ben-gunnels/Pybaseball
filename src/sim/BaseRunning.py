@@ -2,12 +2,14 @@ from .EventRegister import EventRegister
 from .Distributions import Distributions
 from .Event import Event
 from ..utils.utils import get_suffix
+
 class BaseRunning:
-    def __init__(self):
+    def __init__(self, verbose):
         # [First, Second, Third]
         self.bases = [0, 0, 0]
         self.event_register = EventRegister()
         self.dist = Distributions()
+        self.verbose = verbose
     
     def advance_runners(self, event, batter) -> int:
         if (event not in self.event_register.runners_advance_event):
@@ -20,9 +22,9 @@ class BaseRunning:
             if not self._check_base_occupied(i):
                 continue
             if len(self.event_register.runners_advance_event[event]) > 1: # More than 1 possible outcome
-                advance_dist = getattr(self.dist, event)
+                advance_dist = getattr(self.dist, f"{event}_runners_prob_dist")
                 advance_prob = advance_dist.calculate_x(1-batter.speed) # High speed lowers probability of default advance
-                advance_outcome = Event("runners-advance", [advance_prob], []).generate_outcome()
+                advance_outcome = Event("runners-advance", [advance_prob.mu], []).generate_outcome()
                 # The number of bases that the runner can advance maximally
                 advance_bases = self.event_register.runners_advance_event[event][advance_outcome]
             else:
@@ -49,6 +51,13 @@ class BaseRunning:
     def clear_bases(self):
         self.bases = [0, 0, 0]
 
+    def runners_on(self):
+        on = []
+        for i in range(len(self.bases)):
+            if self.bases[i] != 0:
+                on.append(f"{i+1}{get_suffix(i+1)}")
+        return on
+
     def _check_scored(self, base):
         if (base >= len(self.bases)):
             return True
@@ -61,7 +70,7 @@ class BaseRunning:
     
     def display(self, runs_scored):
         if (runs_scored > 0):
-            Event("score", [], [], f"{runs_scored} SCORED on that play!").display()
+            Event("score", [], [], verbose=self.verbose, disp=f"{runs_scored} SCORED on that play!").display()
         for i, runner in enumerate(self.bases):
             if (runner != 0):
-                Event("advance", [], [], f"{runner.last_name} ADVANCES to {i+1}{get_suffix(i+1)}").display() # Get the suffix for the ith + 1 base, e.g. 0 + 1 = 1st base
+                Event("advance", [], [], verbose=self.verbose, disp=f"{runner.last_name} ADVANCES to {i+1}{get_suffix(i+1)}").display() # Get the suffix for the ith + 1 base, e.g. 0 + 1 = 1st base

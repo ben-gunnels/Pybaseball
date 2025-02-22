@@ -32,7 +32,7 @@ def randomize_player(player, ids_taken, numbers_taken):
     id_X = random.randrange(1, MAX_PLAYERS)
     while (id_X in ids_taken):
         id_X = random.randrange(1, MAX_PLAYERS)
-    player["id"] = id_X
+    player["player_id"] = id_X
     # Keep track of ids taken 
     ids_taken.add(id_X)
     player["first_name"] = random.choice(FIRST_NAMES)

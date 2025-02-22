@@ -5,18 +5,24 @@ from ..entities.Pitcher import Pitcher
 from ..entities.Pitch import Pitch
 from ..entities.TeamGenerator import TeamGenerator
 from ..utils.utils import get_suffix
+from ..utils.UserInterface import input_with_verification
 from .GameState import GameState
-from .config import (NUMBER_STRIKES, NUMBER_BALLS, MAX_HBP, MAX_HR, MAX_GROUNDBALL_HR, 
-                     MAX_SWING_MISS, PITCHER_NERF, NUMBER_INNINGS)
 from .Event import Event
 from .EventRegister import EventRegister
 from .Distributions import Distributions
+from .config import (NUMBER_STRIKES, NUMBER_BALLS, MAX_HBP, MAX_HR, MAX_GROUNDBALL_HR, 
+                     MAX_SWING_MISS, PITCHER_NERF, NUMBER_INNINGS, PACE_SETTINGS)
 
 class Simulator:
-    def __init__(self, team_a, team_b, game_state, event_register, data_table, number_innings=NUMBER_INNINGS, **kwargs):
+    """
+        Capable of simulating over the course of a game for two teams.
+    
+    """
+    def __init__(self, team_a, team_b, game_state, event_register, data_table, number_innings=NUMBER_INNINGS, verbose=True, **kwargs):
         assert(NUMBER_STRIKES > 0)
         assert(NUMBER_BALLS > 0)
         self.number_innings = number_innings
+        self.verbose = verbose
         self.team_a = team_a
         self.team_b = team_b
         self.game_state = game_state
@@ -24,42 +30,49 @@ class Simulator:
         self.data = data_table
         self.between_pitch_delay = kwargs.get("between_pitch_delay", 0)
         self.pitch_speed_delay = kwargs.get("pitch_speed_delay", 0)
+        self.intro_delay = kwargs.get("intro_delay", 0)
+        self.team_intro_delay = kwargs.get("team_intro_delay", 0)
+        self.between_batter_delay = kwargs.get("between_batter_delay", 0)
         self.dist = Distributions()
 
-    def display_intro(self, team, ballpark=False, delay=0):
+    def display_intro(self, team, ballpark=False):
         team.display(ballpark)
-        time.sleep(delay)
+        time.sleep(self.intro_delay)
         print(f"Starting lineup: ")
         for i, player in enumerate(team.lineup):
             print(f"{i+1}: ")
             player.display()
+            time.sleep(self.team_intro_delay)
         
         print("Starting pitchers: ")
         for player in team.starting_pitchers:
             player.display()
+            time.sleep(self.team_intro_delay)
 
         print("Bullpen: ")
         for player in team.bullpen:
             player.display()
+            time.sleep(self.team_intro_delay)
 
         print("Bench: ")
         for player in team.bench:
             player.display()
+            time.sleep(self.team_intro_delay)
         print("\n")
     
     def sim_game(self):
         while (True):
             if (self.game_state.inning[0] > self.number_innings):
-                Event("end-game", [], [self.data], f"\nEND OF GAME!\nFinal Score: {self.game_state.team_A} {self.game_state.score[0]} to {self.game_state.team_B} {self.game_state.score[1]}").display()
+                Event("end-game", [], [self.data], verbose=self.verbose, disp=f"\nEND OF GAME!\nFinal Score:\n{self.game_state.team_A} {self.game_state.score[0]}\n{self.game_state.team_B} {self.game_state.score[1]}").display()
                 break
 
             self.game_state.current_state = "start-inning"
             if (self.game_state.inning[0] == 1 and self.game_state.inning[1]):
-                Event(self.game_state.current_state, [], [self.data], f"{self.game_state.batting_team[1]} ready to get us started!\n").display()
+                Event(self.game_state.current_state, [], [self.data], verbose=self.verbose, disp=f"{self.game_state.batting_team[1]} ready to get us started!\n").display()
             else:
-                Event(self.game_state.current_state, [], [self.data], f"END OF INNING! {self.game_state.batting_team[1]} coming up to the plate!\n").display()
-            
+                Event(self.game_state.current_state, [], [self.data], verbose=self.verbose, disp=f"END OF INNING! {self.game_state.batting_team[1]} coming up to the plate!\n").display()
             while (self.game_state.current_state != "switch-sides"):
+                time.sleep(self.between_batter_delay)
                 self.at_bat(self.game_state.pitcher, self.game_state.batter)
                 
     def at_bat(self, pitcher: Pitcher, batter: Batter):
@@ -69,26 +82,32 @@ class Simulator:
             Params: pitcher (Pitcher), batter (batter)
             Returns: None
         """
+        break_condition = False
         self.game_state.balls = 0
         self.game_state.strikes = 0
+        batter_data = self.data.get(f"{batter.first_name}_{batter.last_name}_{batter.player_id}", {})
+        pitcher_data = self.data.get(f"{pitcher.first_name}_{pitcher.last_name}_{pitcher.player_id}", {})
 
-        batter_data = self.data.get(f"{batter.first_name}_{batter.last_name}_{batter._id}", {})
-        pitcher_data = self.data.get(f"{pitcher.first_name}_{pitcher.last_name}_{pitcher._id}", {})
-
-        break_condition = False
         at_bat_message = (
                 f"\n"
                 f"{'Top' if self.game_state.inning[1] else 'Bottom'} of the {self.game_state.inning[0]}{get_suffix(self.game_state.inning[0])} inning.\n"
-                f"The score is {self.game_state.team_A} {self.game_state.score[0]} to \n{self.game_state.team_B} {self.game_state.score[1]}.\n"
+                f"{self.game_state.team_B} {self.game_state.score[1]}\n{self.game_state.team_A} {self.game_state.score[0]}\n"
                 f"{pitcher.first_name} {pitcher.last_name} toes the rubber to face {batter.first_name} {batter.last_name} with {self.game_state.out} outs.\n"
         )
-    
-        Event("at-bat", [], [batter_data, pitcher_data], at_bat_message).display()
+
+        runners_on = self.game_state.baserunning.runners_on()
+        if len(runners_on) > 0:
+            runners_on_message = "Runners on "
+            for base in runners_on:
+                runners_on_message += f"{base} "
+            at_bat_message += runners_on_message
+
+        Event("at-bat", [], [batter_data, pitcher_data], verbose=self.verbose, disp=at_bat_message).display()
 
         while (True):
             if (break_condition):
-                self.data[f"{batter.first_name}_{batter.last_name}_{batter._id}"] = batter_data
-                self.data[f"{pitcher.first_name}_{pitcher.last_name}_{pitcher._id}"] = pitcher_data
+                self.data[f"{batter.first_name}_{batter.last_name}_{batter.player_id}"] = batter_data
+                self.data[f"{pitcher.first_name}_{pitcher.last_name}_{pitcher.player_id}"] = pitcher_data
                 Event("at-bat-completed", [], [batter_data, pitcher_data])
                 self.game_state.current_state = "at-bat-completed"
                 break
@@ -107,7 +126,7 @@ class Simulator:
                 self.game_state.current_state = self.event_register.swing_decision_event[swing_decision] + " " + "ball" # Swing, Not In-Zone
                 
             elif (self.game_state.current_state == "hbp"):
-                Event("batter-hbp", [], [batter_data, pitcher_data], disp=f"Batter {batter.first_name} {batter.last_name} HIT BY PITCH! Ouch! That's gotta hurt!").display()
+                Event("batter-hbp", [], [batter_data, pitcher_data], verbose=self.verbose, disp=f"Batter {batter.first_name} {batter.last_name} HIT BY PITCH! Ouch! That's gotta hurt!").display()
                 self.game_state.current_state = "batter-hbp"
                 break_condition = True
             
@@ -119,23 +138,23 @@ class Simulator:
                 
             elif (self.game_state.current_state == "swing ball"):
                 swing_outcome = self._batter_swing(batter, pitcher, pitch, False, [batter_data, pitcher_data])
-                Event("swinging-ball", [], [batter_data, pitcher_data], f"{batter.last_name} went fishing for that one!").display()
+                Event("swinging-ball", [], [batter_data, pitcher_data], verbose=self.verbose, disp=f"{batter.last_name} went fishing for that one!").display()
                 self.game_state.current_state = self.event_register.swing_outcome_event[swing_outcome]
             
             elif (self.game_state.current_state == "take strike"):
                 self.game_state.strikes += 1
-                Event("strike", [], [batter_data, pitcher_data], "Taken\nStrike!").display()
+                Event("strike", [], [batter_data, pitcher_data], verbose=self.verbose, disp="Taken\nStrike!").display()
                 if (self._check_strikeout()):
-                    Event("strikeout", [], [batter_data, pitcher_data], f"Strike {NUMBER_STRIKES}! YOU'RE OUT!").display()
+                    Event(self.game_state.current_state, [], [batter_data, pitcher_data], verbose=self.verbose, disp=f"Strike {NUMBER_STRIKES}! YOU'RE OUT!").display()
                     self.game_state.current_state = "strikeout"
                     break_condition = True
             
             elif (self.game_state.current_state == "take ball"):
                 self.game_state.balls += 1
-                Event("ball", [], [batter_data, pitcher_data], "Taken\nBall.").display()
+                Event("ball", [], [batter_data, pitcher_data], verbose=self.verbose, disp="Taken\nBall.").display()
                 if (self._check_walk()):
-                    Event("walk", [], [batter_data, pitcher_data], f"Ball {NUMBER_BALLS}. Take your base. WALK").display()
                     self.game_state.current_state = "walk"
+                    Event(self.game_state.current_state, [], [batter_data, pitcher_data], verbose=self.verbose, disp=f"Ball {NUMBER_BALLS}. Take your base. WALK").display()
                     break_condition = True
             
             # Swing Outcome -> result
@@ -144,13 +163,13 @@ class Simulator:
                 Event("swing-miss", [], [batter_data, pitcher_data])
                 print("Strike! Swing and a Miss.")
                 if (self._check_strikeout()):
-                    Event("strikeout", [], [batter_data, pitcher_data], f"Strike {NUMBER_STRIKES}! YOU'RE OUT!").display()
+                    Event(self.game_state.current_state, [], [batter_data, pitcher_data], verbose=self.verbose, disp=f"Strike {NUMBER_STRIKES}! YOU'RE OUT!").display()
                     self.game_state.current_state = "strikeout"
                     break_condition = True
             
             elif (self.game_state.current_state == "foul"):
                 self.game_state.strikes = min(1 + self.game_state.strikes, NUMBER_STRIKES - 1) # Foul balls only increment below NUMBER_STRIKES - 1
-                foul = Event("foul", [], [batter_data, pitcher_data], f"Fouled off.")
+                foul = Event("foul", [], [batter_data, pitcher_data], verbose=self.verbose, disp=f"Fouled off.")
                 foul.display()
             
             elif (self.game_state.current_state == "in-play"):
@@ -172,7 +191,7 @@ class Simulator:
         # First get the type of contact that is made groundball, flyball, linedrive
         groundball_prob = self.dist.groundball_prob_dist.calculate_x(((1-power_trait) + pitch.control*0.1)/2) # Pitch control increases odds of groundball
         linedrive_prob = self.dist.linedrive_prob_dist.calculate_x((power_trait + (1-pitch.stuff*0.1))/2) # Let pitch stuff nerf the power
-        in_play = Event("in-play", [groundball_prob.mu, linedrive_prob.mu], [batter_data, pitcher_data], f"{batter.first_name} {batter.last_name} puts that ball IN PLAY!")
+        in_play = Event("in-play", [groundball_prob.mu, linedrive_prob.mu], [batter_data, pitcher_data], verbose=self.verbose, disp=f"{batter.first_name} {batter.last_name} puts that ball IN PLAY!")
         in_play.display()
         in_play_outcome = in_play.generate_outcome()
         self.game_state.current_state = self.event_register.in_play_event[in_play_outcome]
@@ -181,35 +200,35 @@ class Simulator:
         # Get whether the play is a hit 
         hit_prob_dist = getattr(self.dist, f"hit_on_{self.game_state.current_state}_prob_dist")
         hit_prob = hit_prob_dist.calculate_x((contact_trait+power_trait) / 2) # Likelihood of a hit is impacted by the average of contact and power
-        hit = Event("deciding-hit", [hit_prob.mu], [batter_data, pitcher_data])
+        hit = Event("deciding-hit", [hit_prob.mu], [])
         hit_outcome = hit.generate_outcome()
         self.game_state.current_state = f"{hit_type}-hit" if hit_outcome == 0 else f"out" # Ephemeral state
 
         # If its a hit decide which fielder it is hit to
         if (self.game_state.current_state == f"{hit_type}-hit"):
-            homerun_prob_dist = getattr(self.dist, f"homerun_hit_on_{hit_type}_prob_dist")
+            homerun_prob_dist = getattr(self.dist, f"homerun_on_{hit_type}_prob_dist")
             if (hit_type == "groundball"):
                 homerun_prob = homerun_prob_dist.calculate_x((power_trait + (1-pitch.control*PITCHER_NERF))/2, mx=MAX_GROUNDBALL_HR)
             else:
                 homerun_prob = homerun_prob_dist.calculate_x((power_trait + (1-pitch.control*PITCHER_NERF))/2, mx=MAX_HR)
              # Pitcher control limits homeruns
-            triple_prob_dist = getattr(self.dist, f"triple_hit_on_{hit_type}_prob_dist")
+            triple_prob_dist = getattr(self.dist, f"triple_on_{hit_type}_prob_dist")
             triple_prob = triple_prob_dist.calculate_x((power_trait + 0.1*batter.speed)/2)
-            double_prob_dist = getattr(self.dist, f"double_hit_on_{hit_type}_prob_dist")
+            double_prob_dist = getattr(self.dist, f"double_on_{hit_type}_prob_dist")
             double_prob = double_prob_dist.calculate_x((power_trait + batter.speed)/2)
             single_prob = 1 - homerun_prob.mu - triple_prob.mu - double_prob.mu # Marginalize Singles, singles gets whats left
-            print(f"[{homerun_prob.mu}, {triple_prob.mu}, {double_prob.mu}, {single_prob}]")
-            total_bases = Event("total-bases", [single_prob, single_prob + double_prob.mu, single_prob + double_prob.mu + triple_prob.mu], [batter_data, pitcher_data])
+            total_bases = Event("total-bases", [single_prob, single_prob + double_prob.mu, single_prob + double_prob.mu + triple_prob.mu], [])
             total_bases_outcome = total_bases.generate_outcome()
 
             event_helper_table = { "groundball": 6, "linedrive": 10, "flyball": 14 } # Starting index for each hit type
-            Event(self.game_state.current_state, [], [batter_data, pitcher_data], f"{hit_type.capitalize()}...{['SINGLE.', 'DOUBLE!', 'TRIPLE!!', 'HOME RUN!!! See ya later!'][total_bases_outcome]}").display()
-            self.game_state.current_state = self.event_register.in_play_event[event_helper_table[hit_type]+total_bases_outcome]
+            outcome = self.event_register.in_play_event[event_helper_table[hit_type] + total_bases_outcome]
+            Event(outcome, [], [batter_data, pitcher_data], verbose=self.verbose, disp=f"{hit_type.capitalize()}...{['SINGLE.', 'DOUBLE!', 'TRIPLE!!', 'HOME RUN!!! See ya later!'][total_bases_outcome]}").display()
+            self.game_state.current_state = outcome
         
         elif (self.game_state.current_state == f"out"):
             ### @TODO add fielder errors to this section
-            Event(f"{self.game_state.current_state}", [], [batter_data, pitcher_data], f"{hit_type.capitalize()} out!").display()
-            self.game_state.current_state = f"{hit_type}-out"
+            Event(f"{self.game_state.current_state}", [], [batter_data, pitcher_data], verbose=self.verbose, disp=f"{hit_type.capitalize()} out!").display()
+            self.game_state.current_state = f"{hit_type}-out"   
             
     def _pitch(self, pitch: Pitch, data: dict):
         """
@@ -219,7 +238,7 @@ class Simulator:
         """
         strike_prob = self.dist.strike_prob_dist.calculate_x(pitch.control)
         hbp_prob = self.dist.hbp_prob_dist.calculate_x(1-pitch.control, mx=MAX_HBP) # Invert the probability, cap the probability at MAX_HBP
-        pitch_event = Event("pitch", [strike_prob.mu, strike_prob.mu + hbp_prob.mu], data, f"And the {self.game_state.balls}-{self.game_state.strikes} pitch")
+        pitch_event = Event("pitch", [strike_prob.mu, strike_prob.mu + hbp_prob.mu], data, verbose=self.verbose, disp=f"And the {self.game_state.balls}-{self.game_state.strikes} pitch")
         pitch_event.display()
         time.sleep(self.pitch_speed_delay)
         return pitch_event.generate_outcome()
@@ -244,7 +263,7 @@ class Simulator:
             swing_prob = swing_prob.calculate_x(pitcher.deception) # More likely to swing at ball with high deception and stuff
             swing_prob = swing_prob.calculate_x(pitch.stuff)
         
-        swing_decision_event = Event("swing-decision", [swing_prob.mu], data)
+        swing_decision_event = Event("swing-decision", [swing_prob.mu], [])
         return swing_decision_event.generate_outcome()
 
     def _batter_swing(self, batter: Batter, pitcher: Pitcher, pitch: Pitch, pitch_in_zone: bool, data: dict):
@@ -263,7 +282,7 @@ class Simulator:
             swing_miss_prob = swing_miss_prob.calculate_x((pitch.stuff + pitch.velocity) / 2, mx=MAX_SWING_MISS) # High contact should 
             swing_foul_prob = self.dist.swing_foul_ball_prob_dist.calculate_x(1-contact_trait) # Reduce these probabilites
         
-        swing_event = Event("swing", [swing_miss_prob.mu, swing_miss_prob.mu + swing_foul_prob.mu], data, disp="SWUNG ON...")
+        swing_event = Event("swing", [swing_miss_prob.mu, swing_miss_prob.mu + swing_foul_prob.mu], data, verbose=self.verbose, disp="SWUNG ON...")
         swing_event.display()
         return swing_event.generate_outcome()
     
@@ -285,23 +304,77 @@ class Simulator:
 
 def main():
     # Dependent event on ball in play
+    print(f"Setting up Pybaseball Simulator...")
+    print(f"Let's set up some configurations.")
+    
+    # Set verbosity
+    verbose = input_with_verification(f"Would you like to receive a play-by-play printout of the game? [y/n]: ", ('y', 'n'))
+    verbose = True if verbose == 'y' else False
+    # Set innings limit
+    innings = input_with_verification(f"How many innings would you like to play? [1-9]: ", ('1', '2', '3', '4', '5', '6', '7', '8', '9'))
+    innings = int(innings)
+    # Set pace 
+    pace = input_with_verification(f"What speed would like the game to be played at? [turtle, deer, cheetah]: ", ('turtle', 'deer', 'cheetah'))
+    delay_timers = PACE_SETTINGS[pace]
+
+
     team_a = TeamGenerator().generate_team()
     team_b = TeamGenerator().generate_team()
-    game_state = GameState(team_a, team_b, starting_pitcher_A=random.randrange(0, 5), starting_pitcher_B=random.randrange(0, 5))
+    game_state = GameState(team_a, team_b, starting_pitcher_A=random.randrange(0, 5), starting_pitcher_B=random.randrange(0, 5), verbose=verbose)
     event_register = EventRegister()
-    delay_timers = { "between_pitch_delay": 0, "pitch_speed_delay": 0}
     data = {}
-    simulator = Simulator(team_a, team_b, game_state, event_register, data, number_innings=3, **delay_timers)
+    simulator = Simulator(team_a, team_b, game_state, event_register, data, number_innings=innings, verbose=verbose, **delay_timers)
 
+    # Initialize the data
+    for player in team_a.lineup + team_a.bench + team_a.starting_pitchers + team_a.bullpen:
+        data[f"{player.first_name}_{player.last_name}_{player.player_id}"] = {}
+    
+    # Initialize the data
+    for player in team_b.lineup + team_b.bench + team_b.starting_pitchers + team_b.bullpen:
+        data[f"{player.first_name}_{player.last_name}_{player.player_id}"] = {}
 
-    simulator.display_intro(team_a, True, delay=0)
-    time.sleep(0)
-    simulator.display_intro(team_b, delay=0)
-    time.sleep(0)
+    simulator.display_intro(team_a, ballpark=True)
+    time.sleep(delay_timers["intro_delay"])
+    simulator.display_intro(team_b)
+    time.sleep(delay_timers["intro_delay"])
 
     simulator.sim_game()
 
+    # Define the box score setup
+    stats = ["POS", "PLAYER", "AB", "H", "1B", "2B", "3B", "HR", "SO", "BB", "HBP"]
+    key_words = ["at-bat-completed", "hit", "single", "double", "triple", "homerun", "strikeout", "walk", "hbp"] # Search queries for a stat in database
+    # Define column widths
+    col_widths = [5, 25, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+
+    # print("\n")    
     # print(data)
+    # print("\n")    
+
+    print(f"{team_a.city} {team_a.name} box score")
+    print("".join(str(stats[i]).ljust(col_widths[i]) for i in range(len(stats))))
+    for player in team_a.lineup:
+        player_id = f"{player.first_name}_{player.last_name}_{player.player_id}"
+        row = [player.translate_position(), f"{player.first_name} {player.last_name}"]
+        for i, kw in enumerate(key_words):
+            key_matches = [k for k in data.get(player_id, {}) if kw in k]
+            accumulator = 0
+            for k in key_matches:
+                accumulator += data[player_id].get(k, 0) 
+            row.append(accumulator)
+        print("".join(str(row[i]).ljust(col_widths[i]) for i in range(len(row))))
+
+    print(f"\n{team_b.city} {team_b.name} box score")
+    print("".join(str(stats[i]).ljust(col_widths[i]) for i in range(len(stats))))
+    for player in team_b.lineup:
+        player_id = f"{player.first_name}_{player.last_name}_{player.player_id}"
+        row = [player.translate_position(), f"{player.first_name} {player.last_name}"]
+        for i, kw in enumerate(key_words):
+            key_matches = [k for k in data[player_id] if kw in k]
+            accumulator = 0
+            for k in key_matches:
+                accumulator += data[player_id].get(k, 0) 
+            row.append(accumulator)
+        print("".join(str(row[i]).ljust(col_widths[i]) for i in range(len(row))))
 
 if __name__ == "__main__":
     main()

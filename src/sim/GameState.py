@@ -14,11 +14,11 @@ class GameState:
     bullpen = [False, False] # The team has gone to the bullpen
     spot_in_order = [0, 0] # Index of batter in lineup currently up
     event_register = EventRegister()
-    baserunning = BaseRunning()
+    
     
     _current_state = None
 
-    def __init__(self, team_A: Team, team_B: Team, starting_pitcher_A: int, starting_pitcher_B: int): # Team A = home team, Team B = Away Team
+    def __init__(self, team_A: Team, team_B: Team, starting_pitcher_A: int, starting_pitcher_B: int, verbose: bool = True): # Team A = home team, Team B = Away Team
         self.team_A = team_A.city + " " + team_A.name
         self.team_B = team_B.city + " " + team_B.name
         self.pitcher_A = starting_pitcher_A
@@ -27,6 +27,7 @@ class GameState:
         self.pitcher = self.fielding_team[0].starting_pitchers[starting_pitcher_A]
         self.batting_team = [team_B, self.team_B]
         self.batter = self.batting_team[0].lineup[self.spot_in_order[1]] # Away team start to bat first
+        self.baserunning = BaseRunning(verbose)
 
     def start_game(self):
         print(f"The {self.team_A} at The {self.team_B}")
@@ -70,6 +71,7 @@ class GameState:
     def _switch_sides(self):
         # Reset the inning
         self.out = 0
+        self.baserunning.clear_bases()
         
         # Switch offense and defense
         self.fielding_team, self.batting_team = self.batting_team, self.fielding_team

@@ -22,18 +22,18 @@ IN_PLAY_EVENT_REGISTER = {  0: "groundball",
                             3: "hit_on_groundball",
                             4: "hit_on_flyball",
                             5: "hit_on_linedrive",
-                            6: "single_hit_on_groundball",
-                            7: "double_hit_on_groundball",
-                            8: "triple_hit_on_groundball",
-                            9: "homerun_hit_on_groundball",
-                            10: "single_hit_on_linedrive",
-                            11: "double_hit_on_linedrive",
-                            12: "triple_hit_on_linedrive",
-                            13: "homerun_hit_on_linedrive",
-                            14: "single_hit_on_flyball",
-                            15: "double_hit_on_flyball",
-                            16: "triple_hit_on_flyball",
-                            17: "homerun_hit_on_flyball"
+                            6: "single_on_groundball",
+                            7: "double_on_groundball",
+                            8: "triple_on_groundball",
+                            9: "homerun_on_groundball",
+                            10: "single_on_linedrive",
+                            11: "double_on_linedrive",
+                            12: "triple_on_linedrive",
+                            13: "homerun_on_linedrive",
+                            14: "single_on_flyball",
+                            15: "double_on_flyball",
+                            16: "triple_on_flyball",
+                            17: "homerun_on_flyball"
                         }
 
 FIELDER_EVENT_REGISTER = {
@@ -76,16 +76,23 @@ OUT_EVENT_REGISTER = set({"strikeout", "groundball-out", "linedrive-out", "flyba
 RUNNERS_ADVANCE_REGISTER = { 
                             "walk": [1],
                             "batter-hbp": [1],
-                            "single_hit_on_groundball": [1, 2], # First value is the likely value, the probability can be seen settings
-                            "double_hit_on_groundball": [2, 3],
-                            "triple_hit_on_groundball": [3],
-                            "homerun_hit_on_groundball": [4],
-                            "single_hit_on_linedrive": [1, 2],
-                            "double_hit_on_linedrive": [2, 3],
-                            "triple_hit_on_linedrive": [3],
-                            "homerun_hit_on_linedrive": [4],
-                            "single_hit_on_flyball": [1, 2],
-                            "double_hit_on_flyball": [2, 3],
-                            "triple_hit_on_flyball": [3],
-                            "homerun_hit_on_flyball": [4]
+                            "single_on_groundball": [1, 2], # First value is the likely value, the probability can be seen settings
+                            "double_on_groundball": [2, 3],
+                            "triple_on_groundball": [3],
+                            "homerun_on_groundball": [4],
+                            "single_on_linedrive": [1, 2],
+                            "double_on_linedrive": [2, 3],
+                            "triple_on_linedrive": [3],
+                            "homerun_on_linedrive": [4],
+                            "single_on_flyball": [1, 2],
+                            "double_on_flyball": [2, 3],
+                            "triple_on_flyball": [3],
+                            "homerun_on_flyball": [4]
                         }
+
+
+PACE_SETTINGS = {
+                "turtle": { "intro_delay": 5, "team_intro_delay": 1, "between_pitch_delay": 4, "pitch_speed_delay": 1, "between_batter_delay": 2 },
+                "deer": { "intro_delay": 2, "team_intro_delay": 0.5, "between_pitch_delay": 2, "pitch_speed_delay": 1, "between_batter_delay": 1 },
+                "cheetah": { "intro_delay": 0, "team_intro_delay": 0, "between_pitch_delay": 0, "pitch_speed_delay": 0, "between_batter_delay": 0 }
+                }

@@ -28,6 +28,6 @@ class Pitcher(Player):
         return round(total / len(self.pitches), 2)
 
     def display(self):
-        print(f"{self.handedness} {self._translatePosition()} {self.first_name} {self.last_name} {self.number}")
+        print(f"{self.handedness} {self.translate_position()} {self.first_name} {self.last_name} {self.number}")
         print(f"Attributes: {self.overall}ovr {self.deception}dec {self.stamina}sta")
         print(f"{self._get_pitch_traits('velocity')}velo {self._get_pitch_traits('control')}ctrl {self._get_pitch_traits('stuff')}stf\n")

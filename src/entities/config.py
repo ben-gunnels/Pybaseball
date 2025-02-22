@@ -18,7 +18,7 @@ MAX_NUMBER = 99
 """
 Attribute list
 """
-PLAYER_ATTRIBUTES = ["last_name", "first_name", "position", "number", "handedness"]
+PLAYER_ATTRIBUTES = ["player_id", "last_name", "first_name", "position", "number", "handedness"]
 BATTER_NUMERICAL_ATTRIBUTES = ["contact_l", "power_l", "contact_r", "power_r", "zone_awareness", "patience", "speed", "fielding"]
 PITCHER_NUMERICAL_ATTRIBUTES = ["stamina", "deception"]
 PITCH_NUMERICAL_ATTRIBUTES = ["velocity", "control", "stuff"]

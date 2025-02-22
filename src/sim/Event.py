@@ -1,14 +1,16 @@
 import random
 
 class Event:
-    def __init__(self, event, probabilities, data_tables, disp=""):
+    def __init__(self, event, probabilities, data_tables, verbose=True, disp=""):
         self.event = event
         self.disp = disp
         self.probabilities = probabilities
+        self.verbose = verbose
         self._add_to_tables(data_tables)
     
     def display(self):
-        print(self.disp)
+        if self.verbose:
+            print(self.disp)
 
     def generate_outcome(self): # Partitions outcomes by probability
         r = random.random()

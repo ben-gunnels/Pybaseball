@@ -44,6 +44,9 @@ class GameState:
         # An out has been recorded
         if (new_val in self.event_register.out_event):
             self.out += 1
+
+        if (new_val in self.event_register.runners_advance_on_out_event):
+            return self.baserunning.advance_runners_on_out(new_val, self.batter)
         
         if (new_val in self.event_register.runners_advance_event):
             tm = 0 if self.batting_team[1] == self.team_A else 1

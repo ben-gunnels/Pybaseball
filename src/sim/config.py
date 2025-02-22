@@ -89,7 +89,11 @@ RUNNERS_ADVANCE_REGISTER = {
                             "triple_on_flyball": [3],
                             "homerun_on_flyball": [4]
                         }
-
+# Events that advance a runner but make an out
+RUNNERS_ADVANCE_ON_OUT_REGISTER = {
+                                    "groundball-out": [1],
+                                    "flyball-out": [1],
+                                }
 
 PACE_SETTINGS = {
                 "turtle": { "intro_delay": 5, "team_intro_delay": 1, "between_pitch_delay": 4, "pitch_speed_delay": 1, "between_batter_delay": 2 },

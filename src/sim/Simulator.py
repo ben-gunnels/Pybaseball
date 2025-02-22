@@ -97,7 +97,7 @@ class Simulator:
 
         runners_on = self.game_state.baserunning.runners_on()
         if len(runners_on) > 0:
-            runners_on_message = "Runners on "
+            runners_on_message = "Runners on " if len(runners_on) > 1 else "Runner on "
             for base in runners_on:
                 runners_on_message += f"{base} "
             at_bat_message += runners_on_message
@@ -206,6 +206,7 @@ class Simulator:
 
         # If its a hit decide which fielder it is hit to
         if (self.game_state.current_state == f"{hit_type}-hit"):
+            Event("hit", [], [batter_data, pitcher_data], verbose=self.verbose)
             homerun_prob_dist = getattr(self.dist, f"homerun_on_{hit_type}_prob_dist")
             if (hit_type == "groundball"):
                 homerun_prob = homerun_prob_dist.calculate_x((power_trait + (1-pitch.control*PITCHER_NERF))/2, mx=MAX_GROUNDBALL_HR)
@@ -344,11 +345,7 @@ def main():
     stats = ["POS", "PLAYER", "AB", "H", "1B", "2B", "3B", "HR", "SO", "BB", "HBP"]
     key_words = ["at-bat-completed", "hit", "single", "double", "triple", "homerun", "strikeout", "walk", "hbp"] # Search queries for a stat in database
     # Define column widths
-    col_widths = [5, 25, 3, 3, 3, 3, 3, 3, 3, 3, 3]
-
-    # print("\n")    
-    # print(data)
-    # print("\n")    
+    col_widths = [5, 25, 3, 3, 3, 3, 3, 3, 3, 3, 3]    
 
     print(f"{team_a.city} {team_a.name} box score")
     print("".join(str(stats[i]).ljust(col_widths[i]) for i in range(len(stats))))

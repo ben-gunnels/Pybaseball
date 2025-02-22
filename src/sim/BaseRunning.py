@@ -11,14 +11,15 @@ class BaseRunning:
         self.dist = Distributions()
         self.verbose = verbose
     
-    def advance_runners(self, event, batter) -> int:
+    def advance_runners(self, event, batter, batter_out=False, advance_bases=[2, 1, 0]) -> int:
         if (event not in self.event_register.runners_advance_event):
             return 0 
         
         runs_scored = 0
-        batter_advance = self.event_register.runners_advance_event[event][0] - 1
+        if (not batter_out):
+            batter_advance = self.event_register.runners_advance_event[event][0] - 1
 
-        for i in range(len(self.bases)-1, -1, -1):
+        for i in advance_bases:
             if not self._check_base_occupied(i):
                 continue
             if len(self.event_register.runners_advance_event[event]) > 1: # More than 1 possible outcome
@@ -41,13 +42,35 @@ class BaseRunning:
                 self.bases[i+advance_bases] = self.bases[i]
             # Clear the base
             self.bases[i] = 0
-        if self._check_scored(batter_advance):
-            runs_scored += 1 # Home run
-        else:
-            self.bases[batter_advance] = batter
+        
+        if (not batter_out):
+            if self._check_scored(batter_advance):
+                runs_scored += 1 # Home run
+            else:
+                self.bases[batter_advance] = batter
+
         self.display(runs_scored)
         return runs_scored
-                
+
+    def advance_runners_on_out(self, event, batter):
+        fst = self._check_base_occupied(0)
+        scnd = self._check_base_occupied(1)
+        thrd = self._check_base_occupied(2)
+        run = 0
+        if (event == "groundball-out"):
+            if (fst and scnd and thrd):
+                self._clear_base_and_move_up(batter, 2, "Home")
+            elif (fst and scnd):
+                self._clear_base_and_move_up(batter, 1, "Third")
+            elif (fst):
+                self._clear_base_and_move_up(batter, 0, "Second")
+
+        elif (event == "flyball-out"):
+            if (thrd):
+                self.advance_runners(event, batter, batter_out=True, advance_bases=[2]) # Only advance the runner from third
+
+
+
     def clear_bases(self):
         self.bases = [0, 0, 0]
 
@@ -57,6 +80,11 @@ class BaseRunning:
             if self.bases[i] != 0:
                 on.append(f"{i+1}{get_suffix(i+1)}")
         return on
+    
+    def _clear_base_and_move_up(self, batter, base, disp):
+        Event("fielders-choice", [], [], verbose=self.verbose, disp=f"FIELDERS CHOICE! {self.bases[base].last_name} out at {disp}!")
+        self.bases[base] = 0
+        self.advance_runners(batter, "walk") # Call it a walk to guarantee the runners move only 1 base u
 
     def _check_scored(self, base):
         if (base >= len(self.bases)):
@@ -67,6 +95,9 @@ class BaseRunning:
         if (self.bases[base] == 0):
             return False
         return True
+    
+
+    
     
     def display(self, runs_scored):
         if (runs_scored > 0):

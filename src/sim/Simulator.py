@@ -59,7 +59,7 @@ class Simulator:
 
         Event("end-game", [], 
               [self.data], 
-              verbose=self.verbose, 
+              verbose=True,  # Always display the end game results
               disp=f"\nEND OF GAME!\n{winner_display}\nFinal Score:\n{self.game_state.team_B} {self.game_state.score[1]}\n{self.game_state.team_A} {self.game_state.score[0]}\n").display()
 
                 
@@ -149,8 +149,7 @@ class Simulator:
             # Swing Outcome -> result
             if (self.game_state.current_state == "miss"):
                 self.game_state.strikes += 1
-                Event("swing-miss", [], [batter_data, pitcher_data])
-                print("Strike! Swing and a Miss.")
+                Event("swing-miss", [], [batter_data, pitcher_data], verbose=self.verbose, disp="Strike! Swing and a miss!").display()
                 if (self._check_strikeout()):
                     Event(self.game_state.current_state, [], [batter_data, pitcher_data], verbose=self.verbose, disp=f"Strike {NUMBER_STRIKES}! YOU'RE OUT!").display()
                     self.game_state.current_state = "strikeout"

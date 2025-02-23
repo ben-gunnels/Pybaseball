@@ -15,7 +15,6 @@ class BaseRunning:
     def advance_runners(self, event, batter, batter_out=False, advance_bases=[2, 1, 0]) -> int:
         if event not in self.event_register.runners_advance_event:
             return 0 
-        print(f"Baserunner event {event}")
         runs_scored = 0
         if not batter_out:
             batter_advance = self.event_register.runners_advance_event[event][0] - 1

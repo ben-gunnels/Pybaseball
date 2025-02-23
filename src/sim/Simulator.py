@@ -15,16 +15,14 @@ from .config import (NUMBER_STRIKES, NUMBER_BALLS, MAX_HBP, MAX_HR, MAX_GROUNDBA
 
 class Simulator:
     """
-        Capable of simulating over the course of a game for two teams.
+        Simulates over the course of a game for two teams.
     
     """
-    def __init__(self, team_a, team_b, game_state, event_register, data_table, number_innings=NUMBER_INNINGS, verbose=True, **kwargs):
+    def __init__(self, game_state, event_register, data_table, number_innings=NUMBER_INNINGS, verbose=True, **kwargs):
         assert(NUMBER_STRIKES > 0)
         assert(NUMBER_BALLS > 0)
         self.number_innings = number_innings
         self.verbose = verbose
-        self.team_a = team_a
-        self.team_b = team_b
         self.game_state = game_state
         self.event_register = event_register
         self.data = data_table
@@ -34,46 +32,36 @@ class Simulator:
         self.team_intro_delay = kwargs.get("team_intro_delay", 0)
         self.between_batter_delay = kwargs.get("between_batter_delay", 0)
         self.dist = Distributions()
-
-    def display_intro(self, team, ballpark=False):
-        team.display(ballpark)
-        time.sleep(self.intro_delay)
-        print(f"Starting lineup: ")
-        for i, player in enumerate(team.lineup):
-            print(f"{i+1}: ")
-            player.display()
-            time.sleep(self.team_intro_delay)
-        
-        print("Starting pitchers: ")
-        for player in team.starting_pitchers:
-            player.display()
-            time.sleep(self.team_intro_delay)
-
-        print("Bullpen: ")
-        for player in team.bullpen:
-            player.display()
-            time.sleep(self.team_intro_delay)
-
-        print("Bench: ")
-        for player in team.bench:
-            player.display()
-            time.sleep(self.team_intro_delay)
-        print("\n")
     
-    def sim_game(self):
-        while (True):
-            if (self.game_state.inning[0] > self.number_innings):
-                Event("end-game", [], [self.data], verbose=self.verbose, disp=f"\nEND OF GAME!\nFinal Score:\n{self.game_state.team_A} {self.game_state.score[0]}\n{self.game_state.team_B} {self.game_state.score[1]}").display()
-                break
+    def sim_game(self, intro=True):
+        """
+            Facilitates the logic for simulating the course of a game. Checks the end game condition in the loop to see if a game should terminate.
+            A game terminates if the home team is leading going into the bottom of the last inning, if the home team takes the lead in the bottom of the last inning, 
+            or if the game is in a tie at the end of the last inning. 
+        """
+        if (intro):
+            time.sleep(self.intro_delay)
+            self._display_intro(self.game_state.A, True)
+            time.sleep(self.intro_delay)
+            self._display_intro(self.game_state.B)
 
+        while (not self._check_game_end_condition()):
             self.game_state.current_state = "start-inning"
             if (self.game_state.inning[0] == 1 and self.game_state.inning[1]):
                 Event(self.game_state.current_state, [], [self.data], verbose=self.verbose, disp=f"{self.game_state.batting_team[1]} ready to get us started!\n").display()
             else:
                 Event(self.game_state.current_state, [], [self.data], verbose=self.verbose, disp=f"END OF INNING! {self.game_state.batting_team[1]} coming up to the plate!\n").display()
-            while (self.game_state.current_state != "switch-sides"):
+            while (self.game_state.current_state != "switch-sides" and not self._check_game_end_condition()):
                 time.sleep(self.between_batter_delay)
                 self.at_bat(self.game_state.pitcher, self.game_state.batter)
+
+        winner_display = self._handle_end_game()
+
+        Event("end-game", [], 
+              [self.data], 
+              verbose=self.verbose, 
+              disp=f"\nEND OF GAME!\n{winner_display}\nFinal Score:\n{self.game_state.team_B} {self.game_state.score[1]}\n{self.game_state.team_A} {self.game_state.score[0]}\n").display()
+
                 
     def at_bat(self, pitcher: Pitcher, batter: Batter):
         """
@@ -230,7 +218,35 @@ class Simulator:
         elif (self.game_state.current_state == f"out"):
             ### @TODO add fielder errors to this section
             Event(f"{self.game_state.current_state}", [], [batter_data, pitcher_data], verbose=self.verbose, disp=f"{hit_type.capitalize()} out!").display()
-            self.game_state.current_state = f"{hit_type}-out"   
+            self.game_state.current_state = f"{hit_type}-out"  
+
+    def _display_intro(self, team, ballpark=False):
+        """ 
+            Provides full team introductions to use prior to the start of a game. 
+        """
+        team.display(ballpark)
+        time.sleep(self.intro_delay)
+        print(f"Starting lineup: ")
+        for i, player in enumerate(team.lineup):
+            print(f"{i+1}: ")
+            player.display()
+            time.sleep(self.team_intro_delay)
+        
+        print("Starting pitchers: ")
+        for player in team.starting_pitchers:
+            player.display()
+            time.sleep(self.team_intro_delay)
+
+        print("Bullpen: ")
+        for player in team.bullpen:
+            player.display()
+            time.sleep(self.team_intro_delay)
+
+        print("Bench: ")
+        for player in team.bench:
+            player.display()
+            time.sleep(self.team_intro_delay)
+        print("\n") 
             
     def _pitch(self, pitch: Pitch, data: dict):
         """
@@ -303,6 +319,51 @@ class Simulator:
         if (self.game_state.strikes >= NUMBER_STRIKES):
             return True
         return False
+    
+    def _check_game_end_condition(self):
+        """
+            Evaluates the game situation to see if it should terminate. Checks that the winning team is ahead in the bottom of the last inning, 
+            or the max number of innings has been exceeded.
+            Returns: (bool), True - Game end condition is met, False - Game end condition is not met. 
+        
+        """
+        if self.game_state.inning[0] > self.number_innings:
+            return True
+        
+        if self.game_state.inning[0] == self.number_innings and not self.game_state.inning[1]: # If we are in the last inning in the bottom of the inning
+            if self.game_state.score[0] > self.game_state.score[1]:
+                return True
+        return False
+    
+    def _handle_end_game(self):
+        """
+            Handles end game logic. Adds winner/loser/tie data to teams key of data table. Returns a display for the winner/tie
+            Returns: display (str). Display for game's winner or TIE-GAME if it is a tie
+        
+        """
+        # handle winner outcome
+        winner = 0 if self.game_state.score[0] > self.game_state.score[1] else 1 # 0 - Team A won, 1 - Team B won
+        winner = 2 if self.game_state.score[0] == self.game_state.score[1] else winner
+        winner_display = self.game_state.team_A + " WIN!" if not winner else self.game_state.team_B + " WIN!"
+        winner_display = "TIE-GAME" if winner == 2 else winner_display
+        return winner_display
+    
+
+    def _add_team_data_to_table(self, team: str):
+        """
+            Adds relevant team info to the data table following the completion of a game. Including adding to a teams register of wins/losses/ties/games.
+            Parameters: team (str), the team name which comes from game_state
+        """
+        team_data_table_key = team.replace(" ", "_")
+        default_team_table = { "games": 0, "wins": 0, "losses": 0, "ties": 0 }
+
+        self.data[team_data_table_key] = self.data.get(team_data_table_key, default_team_table)
+
+        self.data[team_data_table_key]["games"] = self.data[team_data_table_key].get("games", 0) + 1
+        self.data[team_data_table_key]["wins"] = self.data[team_data_table_key].get("wins", 0) + 1
+        self.data[team_data_table_key]["losses"] = self.data[team_data_table_key].get("losses", 0) + 1
+        self.data[team_data_table_key["ties"]] = self.data[team_data_table_key].get("ties", 0) + 1
+
 
 def main():
     # Dependent event on ball in play
@@ -325,7 +386,7 @@ def main():
     game_state = GameState(team_a, team_b, starting_pitcher_A=random.randrange(0, 5), starting_pitcher_B=random.randrange(0, 5), verbose=verbose)
     event_register = EventRegister()
     data = {}
-    simulator = Simulator(team_a, team_b, game_state, event_register, data, number_innings=innings, verbose=verbose, **delay_timers)
+    simulator = Simulator(game_state, event_register, data, number_innings=innings, verbose=verbose, **delay_timers)
 
     # Initialize the data
     for player in team_a.lineup + team_a.bench + team_a.starting_pitchers + team_a.bullpen:
@@ -334,11 +395,6 @@ def main():
     # Initialize the data
     for player in team_b.lineup + team_b.bench + team_b.starting_pitchers + team_b.bullpen:
         data[f"{player.first_name}_{player.last_name}_{player.player_id}"] = {}
-
-    simulator.display_intro(team_a, ballpark=True)
-    time.sleep(delay_timers["intro_delay"])
-    simulator.display_intro(team_b)
-    time.sleep(delay_timers["intro_delay"])
 
     simulator.sim_game()
 

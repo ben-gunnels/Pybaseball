@@ -15,7 +15,7 @@ class BaseRunning:
     def advance_runners(self, event, batter, batter_out=False, advance_bases=[2, 1, 0]) -> int:
         if event not in self.event_register.runners_advance_event:
             return 0 
-        
+        print(f"Baserunner event {event}")
         runs_scored = 0
         if not batter_out:
             batter_advance = self.event_register.runners_advance_event[event][0] - 1
@@ -24,8 +24,8 @@ class BaseRunning:
             if not self._check_base_occupied(i):
                 continue
             
-            if event in ["hbp", "walk"]:
-                if i > 0 and not self._check_base_occupied(i - 1):
+            if event in ["batter-hbp", "walk"]:
+                if i != 0 and not self._check_base_occupied(i - 1):
                     continue  # Runner only advances if there is someone behind them
             
             if len(self.event_register.runners_advance_event[event]) > 1: # More than 1 possible outcome
@@ -117,4 +117,4 @@ class BaseRunning:
             Event("score", [], [], verbose=self.verbose, disp=f"{runs_scored} SCORED on that play!").display()
         for i, runner in enumerate(self.bases):
             if (runner != 0):
-                Event("advance", [], [], verbose=self.verbose, disp=f"{runner.last_name} ADVANCES to {i+1}{get_suffix(i+1)}").display() # Get the suffix for the ith + 1 base, e.g. 0 + 1 = 1st base
+                Event("advance", [], [], verbose=self.verbose, disp=f"{runner.last_name} on {i+1}{get_suffix(i+1)}").display() # Get the suffix for the ith + 1 base, e.g. 0 + 1 = 1st base

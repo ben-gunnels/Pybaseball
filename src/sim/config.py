@@ -9,7 +9,7 @@ MAX_HBP = 0.08
 MAX_GROUNDBALL_HR = 0.01
 MAX_HR = 0.3
 MAX_SWING_MISS = 0.6
-PITCHER_NERF = 0.1
+PITCHER_NERF = 1.1 # Adds a multiple to 1 - pitcher trait to reduce the power a pitcher has
 
 NUMBER_INNINGS = 3
 

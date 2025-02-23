@@ -19,6 +19,8 @@ class GameState:
     _current_state = None
 
     def __init__(self, team_A: Team, team_B: Team, starting_pitcher_A: int, starting_pitcher_B: int, verbose: bool = True): # Team A = home team, Team B = Away Team
+        self.A = team_A
+        self.B = team_B
         self.team_A = team_A.city + " " + team_A.name
         self.team_B = team_B.city + " " + team_B.name
         self.pitcher_A = starting_pitcher_A

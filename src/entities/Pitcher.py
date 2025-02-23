@@ -11,15 +11,15 @@ class Pitcher(Player):
         
         self.deception = kwargs.get("deception", DEFAULT_ATTRIBUTE)
         self.stamina = kwargs.get("stamina", DEFAULT_ATTRIBUTE)
-        self._calc_overall()
+        self.overall = self.calc_overall()
 
-    def _calc_overall(self):
+    def calc_overall(self):
         pitch_val = 0
         pitch_traits = 0
         for pitch in self.pitches:
             pitch_val += pitch.velocity + pitch.control + pitch.stuff
             pitch_traits += 3
-        self.overall = round((self.deception + self.stamina + pitch_val) / (2 + pitch_traits), 2)
+        return round((self.deception + self.stamina + pitch_val) / (2 + pitch_traits), 2)
     
     def _get_pitch_traits(self, trait):
         total = 0
@@ -29,5 +29,5 @@ class Pitcher(Player):
 
     def display(self):
         print(f"{self.handedness} {self.translate_position()} {self.first_name} {self.last_name} {self.number}")
-        print(f"Attributes: {self.overall}ovr {self.deception}dec {self.stamina}sta")
-        print(f"{self._get_pitch_traits('velocity')}velo {self._get_pitch_traits('control')}ctrl {self._get_pitch_traits('stuff')}stf\n")
+        print(f"Attributes: {int(self.overall*100)}ovr {int(self.deception*100)}dec {int(self.stamina*100)}sta")
+        print(f"{int(self._get_pitch_traits('velocity')*100)}velo {int(self._get_pitch_traits('control')*100)}ctrl {int(self._get_pitch_traits('stuff')*100)}stf\n")

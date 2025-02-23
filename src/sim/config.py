@@ -96,7 +96,7 @@ RUNNERS_ADVANCE_ON_OUT_REGISTER = {
                                 }
 
 PACE_SETTINGS = {
-                "turtle": { "intro_delay": 5, "team_intro_delay": 1, "between_pitch_delay": 4, "pitch_speed_delay": 1, "between_batter_delay": 2 },
+                "turtle": { "intro_delay": 5, "team_intro_delay": 2.2, "between_pitch_delay": 4, "pitch_speed_delay": 1, "between_batter_delay": 2 },
                 "deer": { "intro_delay": 2, "team_intro_delay": 0.5, "between_pitch_delay": 2, "pitch_speed_delay": 1, "between_batter_delay": 1 },
                 "cheetah": { "intro_delay": 0, "team_intro_delay": 0, "between_pitch_delay": 0, "pitch_speed_delay": 0, "between_batter_delay": 0 }
                 }

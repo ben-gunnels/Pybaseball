@@ -101,6 +101,7 @@ class Simulator:
             for base in runners_on:
                 runners_on_message += f"{base} "
             at_bat_message += runners_on_message
+            at_bat_message += "\n"
 
         Event("at-bat", [], [batter_data, pitcher_data], verbose=self.verbose, disp=at_bat_message).display()
 
@@ -153,8 +154,8 @@ class Simulator:
                 self.game_state.balls += 1
                 Event("ball", [], [batter_data, pitcher_data], verbose=self.verbose, disp="Taken\nBall.").display()
                 if (self._check_walk()):
-                    self.game_state.current_state = "walk"
                     Event(self.game_state.current_state, [], [batter_data, pitcher_data], verbose=self.verbose, disp=f"Ball {NUMBER_BALLS}. Take your base. WALK").display()
+                    self.game_state.current_state = "walk"
                     break_condition = True
             
             # Swing Outcome -> result

@@ -45,7 +45,7 @@ class GameState:
         if (new_val in self.event_register.out_event):
             self.out += 1
 
-        if (new_val in self.event_register.runners_advance_on_out_event):
+        if (new_val in self.event_register.runners_advance_on_out_event and self.out < NUMBER_OUTS):
             return self.baserunning.advance_runners_on_out(new_val, self.batter)
         
         if (new_val in self.event_register.runners_advance_event):

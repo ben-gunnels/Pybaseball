@@ -134,7 +134,7 @@ class Simulator:
                 self.game_state.strikes += 1
                 Event("strike", [], [batter_data, pitcher_data], verbose=self.verbose, disp="Taken\nStrike!").display()
                 if (self._check_strikeout()):
-                    Event(self.game_state.current_state, [], [batter_data, pitcher_data], verbose=self.verbose, disp=f"Strike {NUMBER_STRIKES}! YOU'RE OUT!").display()
+                    Event("strikeout", [], [batter_data, pitcher_data], verbose=self.verbose, disp=f"Strike {NUMBER_STRIKES}! YOU'RE OUT!").display()
                     self.game_state.current_state = "strikeout"
                     break_condition = True
             
@@ -142,7 +142,7 @@ class Simulator:
                 self.game_state.balls += 1
                 Event("ball", [], [batter_data, pitcher_data], verbose=self.verbose, disp="Taken\nBall.").display()
                 if (self._check_walk()):
-                    Event(self.game_state.current_state, [], [batter_data, pitcher_data], verbose=self.verbose, disp=f"Ball {NUMBER_BALLS}. Take your base. WALK").display()
+                    Event("walk", [], [batter_data, pitcher_data], verbose=self.verbose, disp=f"Ball {NUMBER_BALLS}. Take your base. WALK").display()
                     self.game_state.current_state = "walk"
                     break_condition = True
             
@@ -151,7 +151,7 @@ class Simulator:
                 self.game_state.strikes += 1
                 Event("swing-miss", [], [batter_data, pitcher_data], verbose=self.verbose, disp="Strike! Swing and a miss!").display()
                 if (self._check_strikeout()):
-                    Event(self.game_state.current_state, [], [batter_data, pitcher_data], verbose=self.verbose, disp=f"Strike {NUMBER_STRIKES}! YOU'RE OUT!").display()
+                    Event("strikeout", [], [batter_data, pitcher_data], verbose=self.verbose, disp=f"Strike {NUMBER_STRIKES}! YOU'RE OUT!").display()
                     self.game_state.current_state = "strikeout"
                     break_condition = True
             
